@@ -1,0 +1,70 @@
+name: Publish Kodi repository
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: kodi-repository-pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Babaduchi/ersatztv-kodi
+          ref: agent/compile-ersatztv-kodi
+          path: sources/ersatztv-kodi
+      - uses: actions/checkout@v4
+        with:
+          repository: Babaduchi/multi-update-kodi
+          ref: main
+          path: sources/multi-update-kodi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Validate source add-ons
+        run: |
+          python -m compileall -q sources/ersatztv-kodi/plugin.video.ersatztv
+          python -m compileall -q sources/multi-update-kodi/script.multi.update.kodi
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi")):
+              for path in root.rglob("*.xml"):
+                  ET.parse(path)
+                  print("valid:", path)
+          PY
+      - name: Build Kodi repository
+        run: >-
+          python tools/build_kodi_repository.py site
+          sources/ersatztv-kodi/plugin.video.ersatztv
+          sources/multi-update-kodi/script.multi.update.kodi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - name: Publish repository installer release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python -c 'import xml.etree.ElementTree as ET; print(ET.parse("repository.babaduchi.ersatztv/addon.xml").getroot().attrib["version"])')
+          archive="site/repository.babaduchi.ersatztv/repository.babaduchi.ersatztv-${version}.zip"
+          if ! gh release view "v${version}" >/dev/null 2>&1; then
+            gh release create "v${version}" --target "$GITHUB_SHA" --title "Babaduchi Kodi Repository ${version}" --notes "Install the attached ZIP in Kodi to receive Babaduchi add-ons and updates."
+          fi
+          gh release upload "v${version}" "$archive" --clobber
