@@ -32,6 +32,11 @@ jobs:
           repository: Babaduchi/multi-update-kodi
           ref: main
           path: sources/multi-update-kodi
+      - uses: actions/checkout@v4
+        with:
+          repository: Babaduchi/radio-generator-kodi
+          ref: main
+          path: sources/radio-generator-kodi
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -39,10 +44,11 @@ jobs:
         run: |
           python -m compileall -q sources/ersatztv-kodi/plugin.video.ersatztv
           python -m compileall -q sources/multi-update-kodi/script.multi.update.kodi
+          python -m compileall -q sources/radio-generator-kodi/plugin.audio.smartplaylist.radio
           python - <<'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi")):
+          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio")):
               for path in root.rglob("*.xml"):
                   ET.parse(path)
                   print("valid:", path)
@@ -52,6 +58,7 @@ jobs:
           python tools/build_kodi_repository.py site
           sources/ersatztv-kodi/plugin.video.ersatztv
           sources/multi-update-kodi/script.multi.update.kodi
+          sources/radio-generator-kodi/plugin.audio.smartplaylist.radio
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
