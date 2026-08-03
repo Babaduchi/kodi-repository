@@ -24,18 +24,18 @@ jobs:
         with:
           repository: Babaduchi/kodi-chibi-club
           ref: main
-          path: sources/kodi-chibi-club
+          path: sources/visualization.chibiclub
       - uses: actions/checkout@v4
         with:
           repository: xbmc/xbmc
           ref: Omega
           path: kodi
-      - name: Register Chibi Club source
+      - name: Register visualization add-on
         shell: pwsh
         run: |
           $definition = "kodi/cmake/addons/addons/visualization.chibiclub"
           New-Item -ItemType Directory -Force -Path $definition | Out-Null
-          "visualization.chibiclub $env:GITHUB_WORKSPACE/sources/kodi-chibi-club" |
+          "visualization.chibiclub unused" |
             Set-Content "$definition/visualization.chibiclub.txt"
       - name: Configure Chibi Club
         shell: pwsh
@@ -44,7 +44,6 @@ jobs:
             -G "Visual Studio 17 2022" -A x64 `
             "-DADDONS_TO_BUILD=visualization.chibiclub" `
             "-DADDON_SRC_PREFIX=$env:GITHUB_WORKSPACE/sources" `
-            "-DADDONS_DEFINITION_DIR=$env:GITHUB_WORKSPACE/kodi/cmake/addons/addons" `
             "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE/staging" `
             "-DPACKAGE_ZIP=1"
       - name: Build Chibi Club
