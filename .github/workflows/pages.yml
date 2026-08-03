@@ -15,7 +15,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-chibi-club:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Babaduchi/kodi-chibi-club
+          ref: main
+          path: sources/kodi-chibi-club
+      - uses: actions/checkout@v4
+        with:
+          repository: xbmc/xbmc
+          ref: Omega
+          path: kodi
+      - name: Register Chibi Club source
+        shell: pwsh
+        run: |
+          $definition = "kodi/cmake/addons/addons/visualization.chibiclub"
+          New-Item -ItemType Directory -Force -Path $definition | Out-Null
+          "visualization.chibiclub $env:GITHUB_WORKSPACE/sources/kodi-chibi-club" |
+            Set-Content "$definition/visualization.chibiclub.txt"
+      - name: Configure Chibi Club
+        shell: pwsh
+        run: |
+          cmake -S kodi/cmake/addons -B build/chibi-club `
+            -G "Visual Studio 17 2022" -A x64 `
+            -DADDONS_TO_BUILD=visualization.chibiclub `
+            -DADDON_SRC_PREFIX="$env:GITHUB_WORKSPACE/sources" `
+            -DADDONS_DEFINITION_DIR="$env:GITHUB_WORKSPACE/kodi/cmake/addons/addons" `
+            -DCMAKE_INSTALL_PREFIX="$env:GITHUB_WORKSPACE/staging" `
+            -DPACKAGE_ZIP=1
+      - name: Build Chibi Club
+        run: cmake --build build/chibi-club --config Release
+      - name: Verify compiled add-on
+        shell: pwsh
+        run: |
+          $addon = "staging/addons/visualization.chibiclub"
+          if (-not (Test-Path "$addon/addon.xml")) {
+            throw "Compiled Chibi Club addon.xml was not installed"
+          }
+          $dll = Get-ChildItem -Path $addon -Recurse -Filter "*.dll"
+          if (-not $dll) {
+            throw "Compiled Chibi Club DLL was not installed"
+          }
+          Write-Host "Compiled:" $dll.FullName
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visualization.chibiclub-windows-x64
+          path: staging/addons/visualization.chibiclub
+          if-no-files-found: error
+
   publish:
+    needs: build-chibi-club
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -37,6 +88,10 @@ jobs:
           repository: Babaduchi/radio-generator-kodi
           ref: main
           path: sources/radio-generator-kodi
+      - uses: actions/download-artifact@v4
+        with:
+          name: visualization.chibiclub-windows-x64
+          path: sources/chibi-club/visualization.chibiclub
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -48,7 +103,7 @@ jobs:
           python - <<'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio")):
+          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club/visualization.chibiclub")):
               for path in root.rglob("*.xml"):
                   ET.parse(path)
                   print("valid:", path)
@@ -59,6 +114,7 @@ jobs:
           sources/ersatztv-kodi/plugin.video.ersatztv
           sources/multi-update-kodi/script.multi.update.kodi
           sources/radio-generator-kodi/plugin.audio.smartplaylist.radio
+          sources/chibi-club/visualization.chibiclub
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -7,8 +7,11 @@ Add-on source remains independently maintained in:
 - [Babaduchi/ersatztv-kodi](https://github.com/Babaduchi/ersatztv-kodi)
 - [Babaduchi/multi-update-kodi](https://github.com/Babaduchi/multi-update-kodi)
 - [Babaduchi/radio-generator-kodi](https://github.com/Babaduchi/radio-generator-kodi)
+- [Babaduchi/kodi-chibi-club](https://github.com/Babaduchi/kodi-chibi-club)
 
-The publishing workflow checks out those repositories, validates their add-ons, and packages them without duplicating their source here.
+The publishing workflow checks out those repositories, validates their add-ons,
+builds the Windows x64 Chibi Club visualization, and packages them without
+duplicating their source here.
 
 ## Install
 
