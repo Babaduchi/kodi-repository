@@ -3,6 +3,8 @@ name: Publish Kodi repository
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -67,6 +69,7 @@ jobs:
 
   publish:
     needs: build-chibi-club
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
