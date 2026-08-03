@@ -24,10 +24,8 @@ jobs:
         include:
           - catalog: omega
             kodi_ref: Omega
-            kodi22: false
           - catalog: piers
             kodi_ref: master
-            kodi22: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,7 +52,6 @@ jobs:
             "-DADDONS_TO_BUILD=visualization.chibiclub" `
             "-DADDON_SRC_PREFIX=$env:GITHUB_WORKSPACE/sources" `
             "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE/staging" `
-            "-DCHIBICLUB_KODI22=${{ matrix.kodi22 }}" `
             "-DPACKAGE_ZIP=1"
       - name: Build Chibi Club
         run: cmake --build build/chibi-club --config Release
