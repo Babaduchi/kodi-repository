@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Babaduchi/kodi-chibi-club
-          ref: main
+          ref: agent/kodi21-visualization
           path: sources/visualization.chibiclub
       - uses: actions/checkout@v4
         with:
