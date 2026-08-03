@@ -51,7 +51,7 @@ jobs:
       - name: Verify compiled add-on
         shell: pwsh
         run: |
-          $addon = "staging/addons/visualization.chibiclub"
+          $addon = "staging/visualization.chibiclub"
           if (-not (Test-Path "$addon/addon.xml")) {
             throw "Compiled Chibi Club addon.xml was not installed"
           }
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: visualization.chibiclub-windows-x64
-          path: staging/addons/visualization.chibiclub
+          path: staging/visualization.chibiclub
           if-no-files-found: error
 
   publish:
