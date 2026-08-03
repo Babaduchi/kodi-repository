@@ -19,6 +19,15 @@ concurrency:
 jobs:
   build-chibi-club:
     runs-on: windows-2022
+    strategy:
+      matrix:
+        include:
+          - catalog: omega
+            kodi_ref: Omega
+            kodi22: false
+          - catalog: piers
+            kodi_ref: master
+            kodi22: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: xbmc/xbmc
-          ref: Omega
+          ref: ${{ matrix.kodi_ref }}
           path: kodi
       - name: Register visualization add-on
         shell: pwsh
@@ -45,6 +54,7 @@ jobs:
             "-DADDONS_TO_BUILD=visualization.chibiclub" `
             "-DADDON_SRC_PREFIX=$env:GITHUB_WORKSPACE/sources" `
             "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE/staging" `
+            "-DCHIBICLUB_KODI22=${{ matrix.kodi22 }}" `
             "-DPACKAGE_ZIP=1"
       - name: Build Chibi Club
         run: cmake --build build/chibi-club --config Release
@@ -62,7 +72,7 @@ jobs:
           Write-Host "Compiled:" $dll.FullName
       - uses: actions/upload-artifact@v4
         with:
-          name: visualization.chibiclub-windows-x64
+          name: visualization.chibiclub-${{ matrix.catalog }}-windows-x64
           path: staging/visualization.chibiclub
           if-no-files-found: error
 
@@ -92,8 +102,12 @@ jobs:
           path: sources/radio-generator-kodi
       - uses: actions/download-artifact@v4
         with:
-          name: visualization.chibiclub-windows-x64
-          path: sources/chibi-club/visualization.chibiclub
+          name: visualization.chibiclub-omega-windows-x64
+          path: sources/chibi-club-omega/visualization.chibiclub
+      - uses: actions/download-artifact@v4
+        with:
+          name: visualization.chibiclub-piers-windows-x64
+          path: sources/chibi-club-piers/visualization.chibiclub
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -105,18 +119,25 @@ jobs:
           python - <<'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club/visualization.chibiclub")):
+          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club-omega/visualization.chibiclub"), Path("sources/chibi-club-piers/visualization.chibiclub")):
               for path in root.rglob("*.xml"):
                   ET.parse(path)
                   print("valid:", path)
           PY
       - name: Build Kodi repository
-        run: >-
-          python tools/build_kodi_repository.py site
-          sources/ersatztv-kodi/plugin.video.ersatztv
-          sources/multi-update-kodi/script.multi.update.kodi
-          sources/radio-generator-kodi/plugin.audio.smartplaylist.radio
-          sources/chibi-club/visualization.chibiclub
+        run: |
+          python tools/build_kodi_repository.py site/omega \
+            sources/ersatztv-kodi/plugin.video.ersatztv \
+            sources/multi-update-kodi/script.multi.update.kodi \
+            sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
+            sources/chibi-club-omega/visualization.chibiclub
+          python tools/build_kodi_repository.py site/piers \
+            sources/ersatztv-kodi/plugin.video.ersatztv \
+            sources/multi-update-kodi/script.multi.update.kodi \
+            sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
+            sources/chibi-club-piers/visualization.chibiclub
+          cp -R site/omega/repository.babaduchi.ersatztv site/
+          cp site/omega/index.html site/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

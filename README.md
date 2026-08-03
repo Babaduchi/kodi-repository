@@ -10,7 +10,8 @@ Add-on source remains independently maintained in:
 - [Babaduchi/kodi-chibi-club](https://github.com/Babaduchi/kodi-chibi-club)
 
 The publishing workflow checks out those repositories, validates their add-ons,
-builds the Windows x64 Chibi Club visualization, and packages them without
+builds separate Windows x64 Chibi Club visualizations for Kodi 21 Omega and
+Kodi 22 Piers, and packages them without
 duplicating their source here.
 
 ## Install
