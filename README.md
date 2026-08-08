@@ -11,8 +11,8 @@ Add-on source remains independently maintained in:
 - [Babaduchi/visualization.droneshow](https://github.com/Babaduchi/visualization.droneshow)
 
 The publishing workflow checks out those repositories, validates their add-ons,
-builds separate Windows x64 Chibi Club and Linux x86_64 Drone Show
-visualizations for Kodi 21 Omega and Kodi 22 Piers, and packages them without
+builds separate Windows x64 Chibi Club plus Windows x64 and Linux x86_64
+Drone Show visualizations for Kodi 21 Omega and Kodi 22 Piers, and packages them without
 duplicating their source here.
 
 ## Install
