@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Babaduchi/visualization.droneshow
-          ref: main
+          ref: agent/glow-dim-transition
           path: sources/visualization.droneshow
       - uses: actions/checkout@v4
         with:
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Babaduchi/visualization.droneshow
-          ref: main
+          ref: agent/glow-dim-transition
           path: sources/visualization.droneshow
       - uses: actions/checkout@v4
         with:
