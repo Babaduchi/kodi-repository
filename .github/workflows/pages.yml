@@ -170,7 +170,7 @@ jobs:
           python - <<'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club-omega/visualization.chibiclub"), Path("sources/chibi-club-piers/visualization.chibiclub"), Path("sources/drone-show-omega/visualization.droneshow"), Path("sources/drone-show-piers/visualization.droneshow")):
+          for root in (Path("repository.babaduchi"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club-omega/visualization.chibiclub"), Path("sources/chibi-club-piers/visualization.chibiclub"), Path("sources/drone-show-omega/visualization.droneshow"), Path("sources/drone-show-piers/visualization.droneshow")):
               for path in root.rglob("*.xml"):
                   ET.parse(path)
                   print("valid:", path)
@@ -189,7 +189,7 @@ jobs:
             sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
             sources/chibi-club-piers/visualization.chibiclub \
             sources/drone-show-piers/visualization.droneshow
-          cp -R site/omega/repository.babaduchi.ersatztv site/
+          cp -R site/omega/repository.babaduchi site/
           cp site/omega/index.html site/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
@@ -201,8 +201,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          version=$(python -c 'import xml.etree.ElementTree as ET; print(ET.parse("repository.babaduchi.ersatztv/addon.xml").getroot().attrib["version"])')
-          archive="site/repository.babaduchi.ersatztv/repository.babaduchi.ersatztv-${version}.zip"
+          version=$(python -c 'import xml.etree.ElementTree as ET; print(ET.parse("repository.babaduchi/addon.xml").getroot().attrib["version"])')
+          archive="site/repository.babaduchi/repository.babaduchi-${version}.zip"
           if ! gh release view "v${version}" >/dev/null 2>&1; then
             gh release create "v${version}" --target "$GITHUB_SHA" --title "Babaduchi Kodi Repository ${version}" --notes "Install the attached ZIP in Kodi to receive Babaduchi add-ons and updates."
           fi

@@ -8,7 +8,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REPOSITORY = ROOT / "repository.babaduchi.ersatztv"
+REPOSITORY = ROOT / "repository.babaduchi"
 
 
 def version(addon_dir):
@@ -71,7 +71,7 @@ def build(output, addon_dirs):
         "<!doctype html><title>Babaduchi Kodi Repository</title>"
         "<h1>Babaduchi Kodi Repository</h1>"
         "<p>Install the repository ZIP below once, then install Babaduchi add-ons in Kodi.</p>"
-        '<p><a href="repository.babaduchi.ersatztv/repository.babaduchi.ersatztv-{}.zip">Download repository installer</a></p>'.format(version(REPOSITORY)),
+        '<p><a href="repository.babaduchi/repository.babaduchi-{}.zip">Download repository installer</a></p>'.format(version(REPOSITORY)),
         encoding="utf-8",
     )
 
