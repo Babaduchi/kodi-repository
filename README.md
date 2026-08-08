@@ -17,4 +17,6 @@ duplicating their source here.
 
 ## Install
 
-Download the current `repository.babaduchi.ersatztv` release ZIP, then use **Kodi → Add-ons → Install from ZIP file**. The legacy add-on ID is intentionally retained so installations from the former ErsatzTV-hosted repository migrate automatically.
+Download the current `repository.babaduchi` release ZIP, then use **Kodi → Add-ons → Install from ZIP file**.
+
+Versions through 1.2.7 used the legacy ID `repository.babaduchi.ersatztv`. Because Kodi treats the add-on ID as its unique identity, install `repository.babaduchi-1.3.0.zip` manually once when migrating from that legacy repository add-on.
