@@ -56,7 +56,7 @@ jobs:
       - name: Verify compiled add-on
         run: |
           test -f staging/visualization.droneshow/addon.xml
-          find staging/visualization.droneshow -type f -name '*.so' -print -quit | grep .
+          find staging/visualization.droneshow -type f -name '*.so*' -print -quit | grep .
       - uses: actions/upload-artifact@v4
         with:
           name: visualization.droneshow-${{ matrix.catalog }}-linux-x86_64
