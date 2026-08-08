@@ -17,6 +17,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-drone-show:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - catalog: omega
+            kodi_ref: Omega
+          - catalog: piers
+            kodi_ref: master
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Babaduchi/visualization.droneshow
+          ref: main
+          path: sources/visualization.droneshow
+      - uses: actions/checkout@v4
+        with:
+          repository: xbmc/xbmc
+          ref: ${{ matrix.kodi_ref }}
+          path: kodi
+      - name: Install OpenGL build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev
+      - name: Register Drone Show add-on
+        run: |
+          mkdir -p kodi/cmake/addons/addons/visualization.droneshow
+          echo "visualization.droneshow unused" > kodi/cmake/addons/addons/visualization.droneshow/visualization.droneshow.txt
+      - name: Configure Drone Show
+        run: |
+          cmake -S kodi/cmake/addons -B build/drone-show \
+            -DADDONS_TO_BUILD=visualization.droneshow \
+            -DADDON_SRC_PREFIX="$GITHUB_WORKSPACE/sources" \
+            -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/staging" \
+            -DAPP_RENDER_SYSTEM=gl \
+            -DPACKAGE_ZIP=1
+      - name: Build Drone Show
+        run: cmake --build build/drone-show --config Release --parallel 2
+      - name: Verify compiled add-on
+        run: |
+          test -f staging/visualization.droneshow/addon.xml
+          find staging/visualization.droneshow -type f -name '*.so' -print -quit | grep .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visualization.droneshow-${{ matrix.catalog }}-linux-x86_64
+          path: staging/visualization.droneshow
+          if-no-files-found: error
+
   build-chibi-club:
     runs-on: windows-2022
     strategy:
@@ -74,7 +120,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    needs: build-chibi-club
+    needs: [build-chibi-club, build-drone-show]
     if: github.event_name != 'pull_request'
     environment:
       name: github-pages
@@ -105,6 +151,14 @@ jobs:
         with:
           name: visualization.chibiclub-piers-windows-x64
           path: sources/chibi-club-piers/visualization.chibiclub
+      - uses: actions/download-artifact@v4
+        with:
+          name: visualization.droneshow-omega-linux-x86_64
+          path: sources/drone-show-omega/visualization.droneshow
+      - uses: actions/download-artifact@v4
+        with:
+          name: visualization.droneshow-piers-linux-x86_64
+          path: sources/drone-show-piers/visualization.droneshow
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -116,7 +170,7 @@ jobs:
           python - <<'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club-omega/visualization.chibiclub"), Path("sources/chibi-club-piers/visualization.chibiclub")):
+          for root in (Path("repository.babaduchi.ersatztv"), Path("sources/ersatztv-kodi/plugin.video.ersatztv"), Path("sources/multi-update-kodi/script.multi.update.kodi"), Path("sources/radio-generator-kodi/plugin.audio.smartplaylist.radio"), Path("sources/chibi-club-omega/visualization.chibiclub"), Path("sources/chibi-club-piers/visualization.chibiclub"), Path("sources/drone-show-omega/visualization.droneshow"), Path("sources/drone-show-piers/visualization.droneshow")):
               for path in root.rglob("*.xml"):
                   ET.parse(path)
                   print("valid:", path)
@@ -127,12 +181,14 @@ jobs:
             sources/ersatztv-kodi/plugin.video.ersatztv \
             sources/multi-update-kodi/script.multi.update.kodi \
             sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
-            sources/chibi-club-omega/visualization.chibiclub
+            sources/chibi-club-omega/visualization.chibiclub \
+            sources/drone-show-omega/visualization.droneshow
           python tools/build_kodi_repository.py site/piers \
             sources/ersatztv-kodi/plugin.video.ersatztv \
             sources/multi-update-kodi/script.multi.update.kodi \
             sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
-            sources/chibi-club-piers/visualization.chibiclub
+            sources/chibi-club-piers/visualization.chibiclub \
+            sources/drone-show-piers/visualization.droneshow
           cp -R site/omega/repository.babaduchi.ersatztv site/
           cp site/omega/index.html site/index.html
       - uses: actions/configure-pages@v5
