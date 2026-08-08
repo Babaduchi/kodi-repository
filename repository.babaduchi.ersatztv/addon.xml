@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="repository.babaduchi.ersatztv" name="Babaduchi Kodi Repository" version="1.2.6" provider-name="Babaduchi">
+<addon id="repository.babaduchi.ersatztv" name="Babaduchi Kodi Repository" version="1.2.7" provider-name="Babaduchi">
   <extension point="xbmc.addon.repository" name="Babaduchi Kodi Repository">
       <dir maxversion="21.89.999">
         <info compressed="false">https://babaduchi.github.io/kodi-repository/omega/addons.xml</info>
