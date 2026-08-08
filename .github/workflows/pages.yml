@@ -63,6 +63,62 @@ jobs:
           path: staging/visualization.droneshow
           if-no-files-found: error
 
+  build-drone-show-windows:
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        include:
+          - catalog: omega
+            kodi_ref: Omega
+          - catalog: piers
+            kodi_ref: master
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Babaduchi/visualization.droneshow
+          ref: main
+          path: sources/visualization.droneshow
+      - uses: actions/checkout@v4
+        with:
+          repository: xbmc/xbmc
+          ref: ${{ matrix.kodi_ref }}
+          path: kodi
+      - name: Register Drone Show add-on
+        shell: pwsh
+        run: |
+          $definition = "kodi/cmake/addons/addons/visualization.droneshow"
+          New-Item -ItemType Directory -Force -Path $definition | Out-Null
+          "visualization.droneshow unused" |
+            Set-Content "$definition/visualization.droneshow.txt"
+      - name: Configure Drone Show
+        shell: pwsh
+        run: |
+          cmake -S kodi/cmake/addons -B build/drone-show `
+            -G "Visual Studio 17 2022" -A x64 `
+            "-DADDONS_TO_BUILD=visualization.droneshow" `
+            "-DADDON_SRC_PREFIX=$env:GITHUB_WORKSPACE/sources" `
+            "-DCMAKE_INSTALL_PREFIX=$env:GITHUB_WORKSPACE/staging" `
+            "-DPACKAGE_ZIP=1"
+      - name: Build Drone Show
+        run: cmake --build build/drone-show --config Release
+      - name: Verify compiled add-on
+        shell: pwsh
+        run: |
+          $addon = "staging/visualization.droneshow"
+          if (-not (Test-Path "$addon/addon.xml")) {
+            throw "Compiled Drone Show addon.xml was not installed"
+          }
+          $dll = Get-ChildItem -Path $addon -Recurse -Filter "*.dll"
+          if (-not $dll) {
+            throw "Compiled Drone Show DLL was not installed"
+          }
+          Write-Host "Compiled:" $dll.FullName
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visualization.droneshow-${{ matrix.catalog }}-windows-x64
+          path: staging/visualization.droneshow
+          if-no-files-found: error
+
   build-chibi-club:
     runs-on: windows-2022
     strategy:
@@ -120,7 +176,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    needs: [build-chibi-club, build-drone-show]
+    needs: [build-chibi-club, build-drone-show, build-drone-show-windows]
     if: github.event_name != 'pull_request'
     environment:
       name: github-pages
@@ -159,6 +215,14 @@ jobs:
         with:
           name: visualization.droneshow-piers-linux-x86_64
           path: sources/drone-show-piers/visualization.droneshow
+      - uses: actions/download-artifact@v4
+        with:
+          name: visualization.droneshow-omega-windows-x64
+          path: sources/drone-show-omega-windows/visualization.droneshow
+      - uses: actions/download-artifact@v4
+        with:
+          name: visualization.droneshow-piers-windows-x64
+          path: sources/drone-show-piers-windows/visualization.droneshow
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -175,6 +239,31 @@ jobs:
                   ET.parse(path)
                   print("valid:", path)
           PY
+      - name: Combine Drone Show platform binaries
+        run: |
+          python - <<'PY'
+          import shutil
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          for catalog in ("omega", "piers"):
+              linux = Path(f"sources/drone-show-{catalog}/visualization.droneshow")
+              windows = Path(f"sources/drone-show-{catalog}-windows/visualization.droneshow")
+              combined = Path(f"sources/drone-show-{catalog}-combined/visualization.droneshow")
+              shutil.copytree(linux, combined)
+              for library in windows.glob("*.dll"):
+                  shutil.copy2(library, combined / library.name)
+
+              linux_tree = ET.parse(combined / "addon.xml")
+              windows_root = ET.parse(windows / "addon.xml").getroot()
+              extension = linux_tree.getroot().find("extension[@point='xbmc.player.musicviz']")
+              windows_extension = windows_root.find("extension[@point='xbmc.player.musicviz']")
+              extension.set("library_windows", windows_extension.attrib["library_windows"])
+              platform = linux_tree.getroot().find("extension[@point='xbmc.addon.metadata']/platform")
+              platform.text = "all"
+              ET.indent(linux_tree, space="  ")
+              linux_tree.write(combined / "addon.xml", encoding="UTF-8", xml_declaration=True)
+          PY
       - name: Build Kodi repository
         run: |
           python tools/build_kodi_repository.py site/omega \
@@ -182,13 +271,13 @@ jobs:
             sources/multi-update-kodi/script.multi.update.kodi \
             sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
             sources/chibi-club-omega/visualization.chibiclub \
-            sources/drone-show-omega/visualization.droneshow
+            sources/drone-show-omega-combined/visualization.droneshow
           python tools/build_kodi_repository.py site/piers \
             sources/ersatztv-kodi/plugin.video.ersatztv \
             sources/multi-update-kodi/script.multi.update.kodi \
             sources/radio-generator-kodi/plugin.audio.smartplaylist.radio \
             sources/chibi-club-piers/visualization.chibiclub \
-            sources/drone-show-piers/visualization.droneshow
+            sources/drone-show-piers-combined/visualization.droneshow
           cp -R site/omega/repository.babaduchi site/
           cp site/omega/index.html site/index.html
       - uses: actions/configure-pages@v5
